@@ -315,7 +315,7 @@ document.onreadystatechange = (function (settings) {
      */
     var parseBase64Image = function (file, string, callback) {
         var image = document.createElement("img");
-        image.onload = PixelRender.encode.bind(undefined, image, callback);
+        image.onload = PixelRender.encode.bind(PixelRender, image, callback);
         image.src = string;
     };
     
@@ -426,7 +426,7 @@ document.onreadystatechange = (function (settings) {
     },
     "inputSelector": "#input",
     "outputSelector": "#output",
-    "paletteDefault": "GameBoy",
+    "paletteDefault": "Mario",
     "palettes": {
         "Black & White": [
           [0,0,0,0],
@@ -438,7 +438,7 @@ document.onreadystatechange = (function (settings) {
           [255,255,255,255],
           [0,0,0,255],
           [199,199,192,255],
-          [128,128,128,255],
+          [128,128,128,255]
         ],
         "Mario": [
             [0,0,0,0],
