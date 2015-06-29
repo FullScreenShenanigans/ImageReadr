@@ -3,6 +3,7 @@
 declare module ImageReadr {
     export interface IImageReadrSettings {
         allowedFiles: { [i: string]: boolean; };
+        sectionSelector: string;
         inputSelector: string;
         outputSelector: string;
         paletteDefault: string;
