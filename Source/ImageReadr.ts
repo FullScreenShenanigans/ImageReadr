@@ -58,6 +58,8 @@ module ImageReadr {
             this.palette = settings.paletteDefault;
 
             this.initializePalettes();
+
+            this.initializeInput(this.inputSelector);
         }
 
 
@@ -143,7 +145,7 @@ module ImageReadr {
             this.initializeClickInput(surround);
             this.initializeDragInput(surround);
 
-            (surround.children[0]).workerCallback = this.workerPaletteUploaderStart.bind(this);
+            (<IWorkerHTMLElement>surround.children[0]).workerCallback = this.workerPaletteUploaderStart.bind(this);
 
             surround.appendChild(label);
 
@@ -248,7 +250,7 @@ module ImageReadr {
         private handleFileDrop(input: HTMLInputElement, event: DragEvent) {
             var files: FileList = input.files || event.dataTransfer.files,
                 output: HTMLElement = <HTMLElement>document.querySelector(this.outputSelector),
-                elements = [],
+                elements: IWorkerHTMLElement[] = [],
                 file: File,
                 tag: string,
                 element: HTMLDivElement,
@@ -271,7 +273,7 @@ module ImageReadr {
                     continue;
                 }
 
-                elements.push(this.createWorkerElement(files[i], event.target));
+                elements.push(this.createWorkerElement(files[i], <IWorkerHTMLElement>event.target));
             }
 
             for (i = 0; i < elements.length; i += 1) {
@@ -282,8 +284,8 @@ module ImageReadr {
         /**
          * 
          */
-        private createWorkerElement(file: File, target: HTMLElement): HTMLDivElement {
-            var element: HTMLDivElement = document.createElement("div"),
+        private createWorkerElement(file: File, target: IWorkerHTMLElement): IWorkerHTMLElement {
+            var element: IWorkerHTMLElement = <IWorkerHTMLElement>document.createElement("div"),
                 reader = new FileReader();
 
             element.workerCallback = target.workerCallback;
@@ -316,8 +318,9 @@ module ImageReadr {
          * 
          * 
          */
-        private workerTryStartWorking(file: File, element: HTMLElement, event: ProgressEvent): void {
-            var result = event.currentTarget.result;
+        private workerTryStartWorking(file: File, element: IWorkerHTMLElement, event: ProgressEvent): void {
+            var result = (<any>event.currentTarget).result;
+            console.log("Result is", result);
 
             if (element.workerCallback) {
                 element.workerCallback(result, file, element, event);
@@ -409,7 +412,7 @@ module ImageReadr {
          */
         private workerPaletteCollect(image, file, element, src, event) {
             var canvas = document.createElement("canvas"),
-                context = canvas.getContext("2d"),
+                context: CanvasRenderingContext2D = <CanvasRenderingContext2D>canvas.getContext("2d"),
                 data;
 
             canvas.width = image.width;

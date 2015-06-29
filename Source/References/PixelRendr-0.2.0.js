@@ -1,5 +1,325 @@
-/// <reference path="ChangeLinr-0.2.0.ts" />
-/// <reference path="StringFilr-0.2.1.ts" />
+var ChangeLinr;
+(function (ChangeLinr_1) {
+    "use strict";
+    /**
+     * A general utility for transforming raw input to processed output. This is
+     * done by keeping an Array of transform Functions to process input on.
+     * Outcomes for inputs are cached so repeat runs are O(1).
+     */
+    var ChangeLinr = (function () {
+        /**
+         * @param {IChangeLinrSettings} settings
+         */
+        function ChangeLinr(settings) {
+            var i;
+            if (typeof settings.pipeline === "undefined") {
+                throw new Error("No pipeline given to ChangeLinr.");
+            }
+            this.pipeline = settings.pipeline || [];
+            if (typeof settings.transforms === "undefined") {
+                throw new Error("No transforms given to ChangeLinr.");
+            }
+            this.transforms = settings.transforms || {};
+            this.doMakeCache = typeof settings.doMakeCache === "undefined"
+                ? true : settings.doMakeCache;
+            this.doUseCache = typeof settings.doUseCache === "undefined"
+                ? true : settings.doUseCache;
+            this.cache = {};
+            this.cacheFull = {};
+            // Ensure the pipeline is formatted correctly
+            for (i = 0; i < this.pipeline.length; ++i) {
+                // Don't allow null/false transforms
+                if (!this.pipeline[i]) {
+                    throw new Error("Pipe[" + i + "] is invalid.");
+                }
+                // Make sure each part of the pipeline exists
+                if (!this.transforms.hasOwnProperty(this.pipeline[i])) {
+                    if (!this.transforms.hasOwnProperty(this.pipeline[i])) {
+                        throw new Error("Pipe[" + i + "] (\"" + this.pipeline[i] + "\") "
+                            + "not found in transforms.");
+                    }
+                }
+                // Also make sure each part of the pipeline is a Function
+                if (!(this.transforms[this.pipeline[i]] instanceof Function)) {
+                    throw new Error("Pipe[" + i + "] (\"" + this.pipeline[i] + "\") "
+                        + "is not a valid Function from transforms.");
+                }
+                this.cacheFull[i] = this.cacheFull[this.pipeline[i]] = {};
+            }
+        }
+        /* Simple gets
+        */
+        /**
+         * @return {Mixed} The cached output of this.process and this.processFull.
+         */
+        ChangeLinr.prototype.getCache = function () {
+            return this.cache;
+        };
+        /**
+         * @param {String} key   The key under which the output was processed
+         * @return {Mixed} The cached output filed under the given key.
+         */
+        ChangeLinr.prototype.getCached = function (key) {
+            return this.cache[key];
+        };
+        /**
+         * @return {Object} A complete listing of the cached outputs from all
+         *                  processed information, from each pipeline transform.
+         */
+        ChangeLinr.prototype.getCacheFull = function () {
+            return this.cacheFull;
+        };
+        /**
+         * @return {Boolean} Whether the cache object is being kept.
+         */
+        ChangeLinr.prototype.getDoMakeCache = function () {
+            return this.doMakeCache;
+        };
+        /**
+         * @return {Boolean} Whether previously cached output is being used in new
+         *                   process requests.
+         */
+        ChangeLinr.prototype.getDoUseCache = function () {
+            return this.doUseCache;
+        };
+        /* Core processing
+        */
+        /**
+         * Applies a series of transforms to input data. If doMakeCache is on, the
+         * outputs of this are stored in cache and cacheFull.
+         *
+         * @param {Mixed} data   The data to be transformed.
+         * @param {String} [key]   They key under which the data is to be stored.
+         *                         If needed but not provided, defaults to data.
+         * @param {Object} [attributes]   Any extra attributes to be given to the
+         *                                transform Functions.
+         * @return {Mixed} The final output of the pipeline.
+         */
+        ChangeLinr.prototype.process = function (data, key, attributes) {
+            if (key === void 0) { key = undefined; }
+            if (attributes === void 0) { attributes = undefined; }
+            var i;
+            if (typeof key === "undefined" && (this.doMakeCache || this.doUseCache)) {
+                key = data;
+            }
+            // If this keyed input was already processed, get that
+            if (this.doUseCache && this.cache.hasOwnProperty(key)) {
+                return this.cache[key];
+            }
+            // Apply (and optionally cache) each transform in order
+            for (i = 0; i < this.pipeline.length; ++i) {
+                data = this.transforms[this.pipeline[i]](data, key, attributes, this);
+                if (this.doMakeCache) {
+                    this.cacheFull[this.pipeline[i]][key] = data;
+                }
+            }
+            if (this.doMakeCache) {
+                this.cache[key] = data;
+            }
+            return data;
+        };
+        /**
+         * A version of this.process that returns the complete output from each
+         * pipelined transform Function in an Object.
+         *
+         * @param {Mixed} data   The data to be transformed.
+         * @param {String} [key]   They key under which the data is to be stored.
+         *                         If needed but not provided, defaults to data.
+         * @param {Object} [attributes]   Any extra attributes to be given to the
+         *                                transform Functions.
+         * @return {Object} The complete output of the transforms.
+         */
+        ChangeLinr.prototype.processFull = function (raw, key, attributes) {
+            if (attributes === void 0) { attributes = undefined; }
+            var output = {}, i;
+            this.process(raw, key, attributes);
+            for (i = 0; i < this.pipeline.length; ++i) {
+                output[i] = output[this.pipeline[i]] = this.cacheFull[this.pipeline[i]][key];
+            }
+            return output;
+        };
+        return ChangeLinr;
+    })();
+    ChangeLinr_1.ChangeLinr = ChangeLinr;
+})(ChangeLinr || (ChangeLinr = {}));
+var StringFilr;
+(function (StringFilr_1) {
+    "use strict";
+    /**
+     * A general utility for retrieving data from an Object based on nested class
+     * names. You can think of the internal "library" Object as a tree structure,
+     * such that you can pass in a listing (in any order) of the path to data for
+     * retrieval.
+     */
+    var StringFilr = (function () {
+        /**
+         * @param {IStringFilrSettings} settings
+         */
+        function StringFilr(settings) {
+            if (!settings) {
+                throw new Error("No settings given to StringFilr.");
+            }
+            if (!settings.library) {
+                throw new Error("No library given to StringFilr.");
+            }
+            this.library = settings.library;
+            this.normal = settings.normal;
+            this.requireNormalKey = settings.requireNormalKey;
+            this.cache = {};
+            if (this.requireNormalKey) {
+                if (typeof this.normal === "undefined") {
+                    throw new Error("StringFilr is given requireNormalKey, but no normal class.");
+                }
+                this.ensureLibraryNormal();
+            }
+        }
+        /**
+         * @return {Object} The base library of stored information.
+         */
+        StringFilr.prototype.getLibrary = function () {
+            return this.library;
+        };
+        /**
+         * @return {String} The optional normal class String.
+         */
+        StringFilr.prototype.getNormal = function () {
+            return this.normal;
+        };
+        /**
+         * @return {Object} The complete cache of cached output.
+         */
+        StringFilr.prototype.getCache = function () {
+            return this.cache;
+        };
+        /**
+         * @return {Mixed} A cached value, if it exists/
+         */
+        StringFilr.prototype.getCached = function (key) {
+            return this.cache[key];
+        };
+        /**
+         * Completely clears the cache Object.
+         */
+        StringFilr.prototype.clearCache = function () {
+            this.cache = {};
+        };
+        /**
+         * Clears the cached entry for a key.
+         *
+         * @param {String} key
+         */
+        StringFilr.prototype.clearCached = function (key) {
+            if (this.normal) {
+                key = key.replace(this.normal, "");
+            }
+            delete this.cache[key];
+        };
+        /**
+         * Retrieves the deepest matching data in the library for a key.
+         *
+         * @param {String} keyRaw
+         * @return {Mixed}
+         */
+        StringFilr.prototype.get = function (keyRaw) {
+            var key, result;
+            if (this.normal) {
+                key = keyRaw.replace(this.normal, "");
+            }
+            else {
+                key = keyRaw;
+            }
+            // Quickly return a cached result if it exists
+            if (this.cache.hasOwnProperty(key)) {
+                return this.cache[key];
+            }
+            // Since no existed, it must be found deep within the library
+            result = this.followClass(key.split(/\s+/g), this.library);
+            this.cache[key] = this.cache[keyRaw] = result;
+            return result;
+        };
+        /**
+         * Utility helper to recursively check for tree branches in the library
+         * that don't have a key equal to the normal. For each sub-directory that
+         * is caught, the path to it is added to output.
+         *
+         * @param {Object} current   The current location being searched within
+         *                           the library.
+         * @param {String} path   The current path within the library.
+         * @param {String[]} output   An Array of the String paths to parts that
+         *                           don't have a matching key.
+         * @return {String[]} output
+         */
+        StringFilr.prototype.findLackingNormal = function (current, path, output) {
+            var i;
+            if (!current.hasOwnProperty(this.normal)) {
+                output.push(path);
+            }
+            if (typeof current[i] === "object") {
+                for (i in current) {
+                    if (current.hasOwnProperty(i)) {
+                        this.findLackingNormal(current[i], path + " " + i, output);
+                    }
+                }
+            }
+            return output;
+        };
+        /**
+         * Utility function to follow a path into the library (this is the driver
+         * for searching into the library). For each available key, if it matches
+         * a key in current, it is removed from keys and recursion happens on the
+         * sub-directory in current.
+         *
+         * @param {String[]} keys   The currently available keys to search within.
+         * @param {Object} current   The current location being searched within
+         *                           the library.
+         * @return {Mixed} The most deeply matched part of the library.
+         */
+        StringFilr.prototype.followClass = function (keys, current) {
+            var key, i;
+            // If keys runs out, we're done
+            if (!keys || !keys.length) {
+                return current;
+            }
+            // For each key in the current array...
+            for (i = 0; i < keys.length; i += 1) {
+                key = keys[i];
+                // ...if it matches, recurse on the other keys
+                if (current.hasOwnProperty(key)) {
+                    keys.splice(i, 1);
+                    return this.followClass(keys, current[key]);
+                }
+            }
+            // If no key matched, try the normal (default)
+            if (this.normal && current.hasOwnProperty(this.normal)) {
+                return this.followClass(keys, current[this.normal]);
+            }
+            // Nothing matches anything; we're done.
+            return current;
+        };
+        /**
+         * Driver for this.findLackingNormal. If library directories are found to
+         * not have a normal, it throws an error.
+         */
+        StringFilr.prototype.ensureLibraryNormal = function () {
+            var caught = this.findLackingNormal(this.library, "base", []);
+            if (caught.length) {
+                throw new Error("Found " + caught.length + " library "
+                    + "sub-directories missing the normal: "
+                    + "\r\n  " + caught.join("\r\n  "));
+            }
+        };
+        return StringFilr;
+    })();
+    StringFilr_1.StringFilr = StringFilr;
+})(StringFilr || (StringFilr = {}));
+// @echo '/// <reference path="ChangeLinr-0.2.0.ts" />'
+// @echo '/// <reference path="StringFilr-0.2.1.ts" />'
+// @ifdef INCLUDE_DEFINITIONS
+/// <reference path="References/ChangeLinr-0.2.0.ts" />
+/// <reference path="References/StringFilr-0.2.1.ts" />
+/// <reference path="PixelRendr.d.ts" />
+// @endif
+// @include ../Source/PixelRendr.d.ts
 var PixelRendr;
 (function (PixelRendr_1) {
     "use strict";
