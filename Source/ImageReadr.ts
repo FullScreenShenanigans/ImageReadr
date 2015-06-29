@@ -140,10 +140,10 @@ module ImageReadr {
 
             label.textContent = "Drag or upload an image here to generate a palette.";
 
-            // this.initializeClickInput(surround);
-            // this.initializeDragInput(surround);
+            this.initializeClickInput(surround);
+            this.initializeDragInput(surround);
 
-            // surround.children[0].workerCallback = workerPaletteUploaderStart;
+            (surround.children[0]).workerCallback = this.workerPaletteUploaderStart.bind(this);
 
             surround.appendChild(label);
 
@@ -168,6 +168,291 @@ module ImageReadr {
             });
 
             this.palette = name;
+        }
+
+
+        /* Input
+        */
+
+        /**
+         * 
+         */
+        private initializeInput(selector: string): void {
+            var input: HTMLElement = <HTMLElement>document.querySelector(selector);
+
+            this.initializeClickInput(input);
+            this.initializeDragInput(input);
+        }
+
+        /**
+         * 
+         */
+        private initializeClickInput(input: HTMLElement): void {
+            var dummy: HTMLInputElement = document.createElement("input");
+
+            dummy.type = "file";
+            dummy.multiple = true;
+            dummy.onchange = this.handleFileDrop.bind(this, dummy);
+
+            input.addEventListener("click", function () {
+                dummy.click();
+            });
+
+            input.appendChild(dummy);
+        }
+
+        /**
+         * 
+         */
+        private initializeDragInput(input: HTMLElement): void {
+            input.ondragenter = this.handleFileDragEnter.bind(this, input);
+            input.ondragover = this.handleFileDragOver.bind(this, input);
+            input.ondragleave = input.ondragend = this.handleFileDragLeave.bind(this, input);
+            input.ondrop = this.handleFileDrop.bind(this, input);
+        }
+
+        /**
+         * 
+         */
+        private handleFileDragEnter(input: HTMLElement, event: DragEvent): void {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = "copy"
+            }
+            input.className += " hovering";
+        }
+
+        /**
+         * 
+         */
+        private handleFileDragOver(input: HTMLInputElement, event: DragEvent): boolean {
+            event.preventDefault();
+            return false;
+        }
+
+        /**
+         * 
+         */
+        handleFileDragLeave(input: HTMLInputElement, event: DragEvent): void {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = "none"
+            }
+            input.className = input.className.replace(" hovering", "");
+        }
+
+        /**
+         * 
+         * 
+         * @remarks input.files is when the input[type=file] is the source, while
+         *          event.dataTransfer.files is for drag-and-drop.
+         */
+        private handleFileDrop(input: HTMLInputElement, event: DragEvent) {
+            var files: FileList = input.files || event.dataTransfer.files,
+                output: HTMLElement = <HTMLElement>document.querySelector(this.outputSelector),
+                elements = [],
+                file: File,
+                tag: string,
+                element: HTMLDivElement,
+                i: number;
+
+            this.handleFileDragLeave(input, event);
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            for (i = 0; i < files.length; i += 1) {
+                file = files[i];
+                tag = file.type.split("/")[1];
+
+                if (!this.allowedFiles[tag]) {
+                    element = document.createElement("div");
+                    element.className = "output output-failed";
+                    element.textContent = "'" + file.name + "' is either a folder or has a non-image type...";
+                    elements.push(element);
+                    continue;
+                }
+
+                elements.push(this.createWorkerElement(files[i], event.target));
+            }
+
+            for (i = 0; i < elements.length; i += 1) {
+                output.insertBefore(elements[i], output.firstElementChild);
+            }
+        }
+
+        /**
+         * 
+         */
+        private createWorkerElement(file: File, target: HTMLElement): HTMLDivElement {
+            var element: HTMLDivElement = document.createElement("div"),
+                reader = new FileReader();
+
+            element.workerCallback = target.workerCallback;
+            element.className = "output output-uploading";
+            element.setAttribute("palette", this.palette);
+            element.innerText = "Uploading '" + file.name + "'...";
+
+            reader.onprogress = this.workerUpdateProgress.bind(this, file, element);
+            reader.onloadend = this.workerTryStartWorking.bind(this, file, element);
+            reader.readAsDataURL(file);
+
+            return element;
+        }
+
+        /**
+         * 
+         */
+        private workerUpdateProgress(file: File, element: HTMLElement, event: ProgressEvent): void {
+            if (!event.lengthComputable) {
+                return;
+            }
+
+            var percent: number = Math.min(Math.round((event.loaded / event.total) * 100), 100);
+
+            element.innerText = "Uploading '" + file.name + "' (" + percent + "%)...";
+        }
+
+        /**
+         * 
+         * 
+         * 
+         */
+        private workerTryStartWorking(file: File, element: HTMLElement, event: ProgressEvent): void {
+            var result = event.currentTarget.result;
+
+            if (element.workerCallback) {
+                element.workerCallback(result, file, element, event);
+            } else {
+                this.workerTryStartWorkingDefault(result, file, element, event);
+            }
+        }
+
+        /**
+         * 
+         */
+        private workerTryStartWorkingDefault(result, file, element, event): void {
+            if (result.length > 100000) {
+                this.workerCannotStartWorking(result, file, element, event);
+            } else {
+                this.workerStartWorking(result, file, element, event);
+            }
+        }
+
+        /**
+         * 
+         */
+        private workerCannotStartWorking(result, file, element, event) {
+            element.innerText = "'" + file.name + "' is too big! Use a smaller file.";
+            element.className = "output output-failed";
+        }
+
+        /**
+         * 
+         */
+        private workerStartWorking(result, file, element, event) {
+            var displayBase64 = document.createElement("input");
+
+            element.className = "output output-working";
+            element.innerText = "Working on " + file.name + "...";
+
+            displayBase64.spellcheck = false;
+            displayBase64.className = "selectable";
+            displayBase64.type = "text";
+            displayBase64.setAttribute("value", result);
+
+            element.appendChild(document.createElement("br"));
+            element.appendChild(displayBase64);
+
+            this.parseBase64Image(file, result, this.workerFinishRender.bind(this, file, element));
+        }
+
+        /**
+         * 
+         */
+        private parseBase64Image(file, src, callback) {
+            var image = document.createElement("img");
+            image.onload = this.PixelRender.encode.bind(this.PixelRender, image, callback);
+            image.src = src;
+        }
+
+        /**
+         * 
+         */
+        private workerFinishRender(file, element, result, image) {
+            var displayResult = document.createElement("input");
+
+            displayResult.spellcheck = false;
+            displayResult.className = "selectable";
+            displayResult.type = "text";
+            displayResult.setAttribute("value", result);
+
+            element.firstChild.textContent = "Finished '" + file.name + "' ('" + element.getAttribute("palette") + "' palette).";
+            element.className = "output output-complete";
+            element.style.backgroundImage = "url('" + image.src + "')";
+
+            element.appendChild(displayResult);
+        }
+
+        /**
+         * 
+         */
+        private workerPaletteUploaderStart(result, file, element, event) {
+            var image = document.createElement("img");
+            image.onload = this.workerPaletteCollect.bind(this, image, file, element, result);
+            image.src = result;
+
+            element.className = "output output-working";
+            element.innerText = "Working on " + file.name + "...";
+        }
+
+        /**
+         * 
+         */
+        private workerPaletteCollect(image, file, element, src, event) {
+            var canvas = document.createElement("canvas"),
+                context = canvas.getContext("2d"),
+                data;
+
+            canvas.width = image.width;
+            canvas.height = image.height;
+
+            context.drawImage(image, 0, 0);
+
+            data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+
+            this.workerPaletteFinish(
+                this.PixelRender.generatePaletteFromRawData(data, true, true),
+                file,
+                element,
+                src);
+        }
+
+        /**
+         * 
+         */
+        private workerPaletteFinish(colors, file, element, src) {
+            var chooser = this.initializePalette(file.name, colors),
+                displayResult = document.createElement("input");
+
+            chooser.style.backgroundImage = "url('" + src + "')";
+
+            displayResult.spellcheck = false;
+            displayResult.className = "selectable";
+            displayResult.type = "text";
+            displayResult.setAttribute("value", "[ [" + colors.join("], [") + "] ]");
+
+            if (colors.length > 999) {
+                element.className = "output output-failed";
+                element.innerText = "Too many colors (>999) in " + file.name + " palette.";
+            }
+
+            element.className = "output output-complete";
+            element.innerText = "Created " + file.name + " palette (" + colors.length + " colors).";
+
+            document.querySelector("#palettes").appendChild(chooser);
+
+            element.appendChild(displayResult);
+
+            chooser.click();
         }
     }
 }
