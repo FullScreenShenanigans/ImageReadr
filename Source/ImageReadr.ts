@@ -96,11 +96,14 @@ module ImageReadr {
         /**
          * 
          */
-        private initializePalette(name, palette): HTMLDivElement {
-            var surround = document.createElement("div"),
-                label = document.createElement("h4"),
-                container = document.createElement("div"),
-                color, boxOut, boxIn, i;
+        private initializePalette(name: string, palette: number[][]| Uint8ClampedArray[]): HTMLDivElement {
+            var surround: HTMLDivElement = document.createElement("div"),
+                label: HTMLHeadingElement = document.createElement("h4"),
+                container: HTMLDivElement = document.createElement("div"),
+                color: number[],
+                boxOut: HTMLDivElement,
+                boxIn: HTMLDivElement,
+                i: number;
 
             surround.className = "palette";
             label.className = "palette-label";
@@ -111,7 +114,7 @@ module ImageReadr {
             label.textContent = "Palette: " + name;
 
             for (i = 0; i < palette.length; i += 1) {
-                color = palette[i];
+                color = <number[]>palette[i];
 
                 boxOut = document.createElement("div");
                 boxOut.className = "palette-box";
@@ -155,12 +158,12 @@ module ImageReadr {
         /**
          * 
          */
-        private choosePalette(element: HTMLElement, name, palette, event) {
+        private choosePalette(element: HTMLElement, name: string, palette: number[][], event: Event): void {
             var elements: HTMLCollection = element.parentElement.children,
-                i;
+                i: number;
 
             for (i = 0; i < elements.length; i += 1) {
-                (<HTMLElement>elements[i]).className = "palette"
+                (<HTMLElement>elements[i]).className = "palette";
             }
 
             element.className = "palette palette-selected";
@@ -196,7 +199,7 @@ module ImageReadr {
             dummy.multiple = true;
             dummy.onchange = this.handleFileDrop.bind(this, dummy);
 
-            input.addEventListener("click", function () {
+            input.addEventListener("click", function (): void {
                 dummy.click();
             });
 
@@ -218,7 +221,7 @@ module ImageReadr {
          */
         private handleFileDragEnter(input: HTMLElement, event: DragEvent): void {
             if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = "copy"
+                event.dataTransfer.dropEffect = "copy";
             }
             input.className += " hovering";
         }
@@ -234,9 +237,9 @@ module ImageReadr {
         /**
          * 
          */
-        handleFileDragLeave(input: HTMLInputElement, event: DragEvent): void {
+        private handleFileDragLeave(input: HTMLInputElement, event: DragEvent): void {
             if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = "none"
+                event.dataTransfer.dropEffect = "none";
             }
             input.className = input.className.replace(" hovering", "");
         }
@@ -247,7 +250,7 @@ module ImageReadr {
          * @remarks input.files is when the input[type=file] is the source, while
          *          event.dataTransfer.files is for drag-and-drop.
          */
-        private handleFileDrop(input: HTMLInputElement, event: DragEvent) {
+        private handleFileDrop(input: HTMLInputElement, event: DragEvent): void {
             var files: FileList = input.files || event.dataTransfer.files,
                 output: HTMLElement = <HTMLElement>document.querySelector(this.outputSelector),
                 elements: IWorkerHTMLElement[] = [],
@@ -286,7 +289,7 @@ module ImageReadr {
          */
         private createWorkerElement(file: File, target: IWorkerHTMLElement): IWorkerHTMLElement {
             var element: IWorkerHTMLElement = <IWorkerHTMLElement>document.createElement("div"),
-                reader = new FileReader();
+                reader: FileReader = new FileReader();
 
             element.workerCallback = target.workerCallback;
             element.className = "output output-uploading";
@@ -319,8 +322,7 @@ module ImageReadr {
          * 
          */
         private workerTryStartWorking(file: File, element: IWorkerHTMLElement, event: ProgressEvent): void {
-            var result = (<any>event.currentTarget).result;
-            console.log("Result is", result);
+            var result: string = (<any>event.currentTarget).result;
 
             if (element.workerCallback) {
                 element.workerCallback(result, file, element, event);
@@ -332,7 +334,7 @@ module ImageReadr {
         /**
          * 
          */
-        private workerTryStartWorkingDefault(result, file, element, event): void {
+        private workerTryStartWorkingDefault(result: string, file: File, element: HTMLElement, event: Event): void {
             if (result.length > 100000) {
                 this.workerCannotStartWorking(result, file, element, event);
             } else {
@@ -343,7 +345,7 @@ module ImageReadr {
         /**
          * 
          */
-        private workerCannotStartWorking(result, file, element, event) {
+        private workerCannotStartWorking(result: string, file: File, element: HTMLElement, event: Event): void {
             element.innerText = "'" + file.name + "' is too big! Use a smaller file.";
             element.className = "output output-failed";
         }
@@ -351,8 +353,8 @@ module ImageReadr {
         /**
          * 
          */
-        private workerStartWorking(result, file, element, event) {
-            var displayBase64 = document.createElement("input");
+        private workerStartWorking(result: string, file: File, element: HTMLElement, event: Event): void {
+            var displayBase64: HTMLInputElement = document.createElement("input");
 
             element.className = "output output-working";
             element.innerText = "Working on " + file.name + "...";
@@ -371,8 +373,8 @@ module ImageReadr {
         /**
          * 
          */
-        private parseBase64Image(file, src, callback) {
-            var image = document.createElement("img");
+        private parseBase64Image(file: File, src: string, callback: PixelRendr.IPixelRendrEncodeCallback): void {
+            var image: HTMLImageElement = document.createElement("img");
             image.onload = this.PixelRender.encode.bind(this.PixelRender, image, callback);
             image.src = src;
         }
@@ -380,8 +382,8 @@ module ImageReadr {
         /**
          * 
          */
-        private workerFinishRender(file, element, result, image) {
-            var displayResult = document.createElement("input");
+        private workerFinishRender(file: File, element: HTMLElement, result: string, image: HTMLImageElement): void {
+            var displayResult: HTMLInputElement = document.createElement("input");
 
             displayResult.spellcheck = false;
             displayResult.className = "selectable";
@@ -398,8 +400,8 @@ module ImageReadr {
         /**
          * 
          */
-        private workerPaletteUploaderStart(result, file, element, event) {
-            var image = document.createElement("img");
+        private workerPaletteUploaderStart(result: string, file: File, element: HTMLElement, event: Event): void {
+            var image: HTMLImageElement = document.createElement("img");
             image.onload = this.workerPaletteCollect.bind(this, image, file, element, result);
             image.src = result;
 
@@ -410,20 +412,20 @@ module ImageReadr {
         /**
          * 
          */
-        private workerPaletteCollect(image, file, element, src, event) {
-            var canvas = document.createElement("canvas"),
+        private workerPaletteCollect(image: HTMLImageElement, file: File, element: HTMLElement, src: string, event: Event): void {
+            var canvas: HTMLCanvasElement = document.createElement("canvas"),
                 context: CanvasRenderingContext2D = <CanvasRenderingContext2D>canvas.getContext("2d"),
-                data;
+                data: Uint8ClampedArray;
 
             canvas.width = image.width;
             canvas.height = image.height;
 
             context.drawImage(image, 0, 0);
 
-            data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+            data = <Uint8ClampedArray><any>context.getImageData(0, 0, canvas.width, canvas.height).data;
 
             this.workerPaletteFinish(
-                this.PixelRender.generatePaletteFromRawData(data, true, true),
+                this.PixelRender.generatePaletteFromRawData(<Uint8ClampedArray>data, true, true),
                 file,
                 element,
                 src);
@@ -432,9 +434,9 @@ module ImageReadr {
         /**
          * 
          */
-        private workerPaletteFinish(colors, file, element, src) {
-            var chooser = this.initializePalette(file.name, colors),
-                displayResult = document.createElement("input");
+        private workerPaletteFinish(colors: Uint8ClampedArray[], file: File, element: HTMLElement, src: string): void {
+            var chooser: HTMLDivElement = this.initializePalette(file.name, colors),
+                displayResult: HTMLInputElement = document.createElement("input");
 
             chooser.style.backgroundImage = "url('" + src + "')";
 
