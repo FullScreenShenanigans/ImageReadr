@@ -3,23 +3,57 @@ document.onreadystatechange = function (event) {
         return;
     }
 
-    var imageDrawer;
+    var imageDrawers = [];
 
     var input = document.getElementById("myTextInput");
+    var output = document.getElementById("output");
+
     input.onkeypress = function(key) {
         if(key.which == 13) {
-            imageDrawer = new ImageDrawr(
-                input.value,
-                document.getElementById("myLeftButton"),
-                document.getElementById("myRightButton"),
-                document.getElementById("myWidth"),
-                document.getElementById("myHeight"),
-                document.getElementById("myCanvas"),
-                document.getElementById("myLink")
-            );
+            processInput(input.value, output, imageDrawers);
         }
     };
 };
+
+function processInput(inputString, output, imageDrawers) {
+    var e = createDomElements();
+    imageDrawers.push( new ImageDrawr(
+        inputString, e.left, e.right, e.width, e.height, e.canvas, e.link) );
+    output.insertBefore( e.container, output.firstElementChild );
+}
+
+function createDomElements() {
+    var e = {
+        container : document.createElement( "div" ),
+        left   : createInputHelper( "button", "←" ),
+        right  : createInputHelper( "button", "→" ),
+        width  : createInputHelper( "text" ),
+        height : createInputHelper( "text" ),
+        link   : document.createElement( "a" ),
+        canvas : document.createElement( "canvas" ),
+    };
+    e.container.appendChild( e.left );
+    e.container.appendChild( e.right );
+    e.container.appendChild( document.createElement("br") );
+    e.container.appendChild( e.width );
+    e.container.appendChild( e.height );
+    e.container.appendChild( document.createElement("br") );
+    e.container.appendChild( e.link );
+    e.link.appendChild( e.canvas );
+    return e;
+}
+
+function createInputHelper(type, value) {
+    var input = document.createElement("input");
+    if( type === "text" ) {
+        input.setAttribute( "type", "text" );
+        input.setAttribute( "readonly", "readonly" );
+    } else if( type === "button" ) {
+        input.setAttribute( "type", "button" );
+        input.setAttribute( "value", value );
+    }
+    return input;
+}
 
 function ImageDrawr(inputString
     , leftButton, rightButton
