@@ -13,6 +13,17 @@ document.onreadystatechange = function (event) {
             processInput(input.value, output, imageDrawers);
         }
     };
+
+    // Change input's class name when its value has changed.
+    // For page reload: soft checking for the original input value (no digit).
+    if( /[0-9]/.test( input.value ) ) {
+        input.className = "";
+    } else {
+        input.oninput = function() {
+            input.className = "";
+            input.oninput = null;
+        };
+    }
 };
 
 function processInput(inputString, output, imageDrawers) {
@@ -40,6 +51,8 @@ function createDomElements() {
     e.container.appendChild( document.createElement("br") );
     e.container.appendChild( e.link );
     e.link.appendChild( e.canvas );
+
+    e.container.className = "output";
     return e;
 }
 

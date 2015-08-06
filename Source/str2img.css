@@ -14,14 +14,13 @@ body {
 
 aside {
     padding: 14px;
+}
+
+aside, .input {
     color: #777777;
     font-size: 1.4em;
     font-style: italic;
     text-align: center;
-    -moz-transition: 350ms opacity;
-    -o-transition: 350ms opacity;
-    -webkit-transition: 350ms opacity;
-    transition: 350ms opacity;
 }
 
 
@@ -70,9 +69,27 @@ body {
         }
 
     #output input[type=text] {
-        //display: block;
-        //position: relative;
-        width: 4em;
+        width: 2em;
         text-align: center;
     }
+
+.output {
+    position: relative;
+    margin: 14px 0;
+    padding: 7px 0;
+    border: solid #aaaaaa;
+    border-width: 1px 0;
+    text-align: center;
+    overflow-x: hidden;
+    background-size: contain;
+    background-position: right;
+    background-repeat: no-repeat;
+    background-color: #daffdf;
+}
+
+canvas {
+    margin: 15px 0 0 0;
+    border: solid gray;
+    border-width: 1px;
+}
 
