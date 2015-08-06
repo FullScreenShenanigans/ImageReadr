@@ -27,9 +27,10 @@ document.onreadystatechange = function (event) {
 };
 
 function processInput(inputString, output, imageDrawers) {
+    var pixelRender = createPixelRender( inputString );
     var e = createDomElements();
     imageDrawers.push( new ImageDrawr(
-        inputString, e.left, e.right, e.width, e.height, e.canvas, e.link) );
+        pixelRender, e.left, e.right, e.width, e.height, e.canvas, e.link) );
     output.insertBefore( e.container, output.firstElementChild );
 }
 
@@ -68,13 +69,16 @@ function createInputHelper(type, value) {
     return input;
 }
 
-function ImageDrawr(inputString
-    , leftButton, rightButton
-    , widthText, heightText
-    , canvas
-    , link ) 
+function ImageDrawr(
+    pixelRender,
+    leftButton,
+    rightButton,
+    widthText,
+    heightText,
+    canvas,
+    link )
 {
-    this.pixelRender = createPixelRender(inputString);
+    this.pixelRender = pixelRender;
     var nPixels = this.pixelRender.library.sprites.mySprite.length / 4;
     this.dims = calculatePossibleDimensions(nPixels);
     this.dimIndex = Math.floor( (this.dims.length - 1) / 2 );
