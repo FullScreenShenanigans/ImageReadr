@@ -5,7 +5,7 @@ document.onreadystatechange = function (event) {
 
     var imageDrawers = [];
 
-    var input = document.getElementById("myTextInput");
+    var input = document.getElementById("text-input");
     var output = document.getElementById("output");
 
     input.onkeypress = function(key) {
@@ -52,7 +52,6 @@ function createDomElements() {
     e.container.appendChild( document.createElement("br") );
     e.container.appendChild( e.link );
     e.link.appendChild( e.canvas );
-
     e.container.className = "output";
     return e;
 }
@@ -60,11 +59,11 @@ function createDomElements() {
 function createInputHelper(type, value) {
     var input = document.createElement("input");
     if( type === "text" ) {
-        input.setAttribute( "type", "text" );
-        input.setAttribute( "readonly", "readonly" );
+        input.type = "text";
+        input.readOnly = true;
     } else if( type === "button" ) {
-        input.setAttribute( "type", "button" );
-        input.setAttribute( "value", value );
+        input.type = "button";
+        input.value = value;
     }
     return input;
 }

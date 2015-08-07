@@ -16,7 +16,7 @@ aside {
     padding: 14px;
 }
 
-aside, .input {
+aside, .original {
     color: #777777;
     font-size: 1.4em;
     font-style: italic;
@@ -68,11 +68,6 @@ body {
             display: none;
         }
 
-    #output input[type=text] {
-        width: 2em;
-        text-align: center;
-    }
-
 .output {
     position: relative;
     margin: 14px 0;
@@ -87,9 +82,14 @@ body {
     background-color: #daffdf;
 }
 
-canvas {
-    margin: 15px 0 0 0;
-    border: solid gray;
-    border-width: 1px;
-}
+    .output input[type=text] {
+        width: 2em;
+        text-align: center;
+    }
+
+    .output canvas {
+        margin: 15px 0 0 0;
+        border: solid gray;
+        border-width: 1px;
+    }
 
