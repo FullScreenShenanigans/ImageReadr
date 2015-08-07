@@ -86,8 +86,10 @@ function ImageDrawr(
     this.heightText = heightText;
     this.link = link;
     var that = this;
-    leftButton.onclick  = function() { that.updateDim("-"); };
-    rightButton.onclick = function() { that.updateDim("+"); };
+    this.leftButton  = leftButton;
+    this.rightButton = rightButton;
+    this.leftButton.onclick  = function() { that.updateDim("-"); };
+    this.rightButton.onclick = function() { that.updateDim("+"); };
     this.updateDim();
 }
 ImageDrawr.prototype.updateDim = function(op) {
@@ -102,6 +104,9 @@ ImageDrawr.prototype.updateDim = function(op) {
 
     this.canvas.width  = this.widthText.value  = this.dims[this.dimIndex][0];
     this.canvas.height = this.heightText.value = this.dims[this.dimIndex][1];
+
+    this.rightButton.readOnly = (this.dimIndex == maxInd);
+    this.leftButton .readOnly = (this.dimIndex == 0);
 
     this.render();
 }
