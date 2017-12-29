@@ -1,4 +1,6 @@
 # ImageReadr
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/FullScreenShenanigans/ImageReadr.svg)](https://greenkeeper.io/)
 A utility for converting regular images into PixelRendr sprites.
 
 #### Basic Usage
